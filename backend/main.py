@@ -2,9 +2,18 @@ from fastapi import FastAPI
 import httpx
 import dotenv
 import os
+from fastapi.middleware.cors import CORSMiddleware
 
 dotenv.load_dotenv()
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 STEAM_API_KEY = os.getenv("STEAM_API_KEY")
 
