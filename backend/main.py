@@ -38,6 +38,12 @@ async def resolve_vanity_url(vanity_name: str):
 
 @app.get("/common-games")
 async def get_common_games(user_url: str):
+    # ID in link - https://steamcommunity.com/profiles/0000000000000000/
+    if user_url.startswith("https://steamcommunity.com/"):
+        parts = user_url.rstrip("/").split("/")
+        if len(parts) >= 5 and parts[3] in ["id", "profiles"]:
+            user_url = parts[4]
+
     # Steamd ID 17 digits, vanity URL custom
     if user_url.isdigit() and len(user_url) == 17:
         steam_id = user_url
