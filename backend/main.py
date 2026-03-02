@@ -17,6 +17,30 @@ app.add_middleware(
 
 STEAM_API_KEY = os.getenv("STEAM_API_KEY")
 
+async def get_steam_id(identifier: str):
+    # Extract from URL format
+    if identifier.startswith("https://steamcommunity.com/"):
+        parts = identifier.rstrip("/").split("/")
+        if len(parts) >= 5 and parts[3] in ["id", "profiles"]:
+            extracted = parts[4]
+            # /profiles/ URL
+            if parts[3] == "profiles":
+                print(f"{identifier} is a URL with direct Steam ID: {extracted}")
+                return extracted
+            # /id/ URL
+            else:
+                print(f"{identifier} is a vanity URL, resolving: {extracted}")
+                return await resolve_vanity_url(extracted)
+
+    # Already a 17-digit Steam ID
+    if identifier.isdigit() and len(identifier) == 17:
+        print(f"{identifier} is already a Steam ID.")
+        return identifier
+    
+    # Try to resolve as vanity URL
+    print(f"Attempting to resolve {identifier} as vanity URL")
+    return await resolve_vanity_url(identifier)
+
 async def resolve_vanity_url(vanity_name: str):
     url = "http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/"
 
@@ -35,25 +59,43 @@ async def resolve_vanity_url(vanity_name: str):
         
     return None
 
+@app.get("/player-info")
+async def get_player_info(identifier: str):
+    steam_id = await get_steam_id(identifier)
+    
+    if not steam_id:
+        return {"Error": "User not found"}
+
+    api_url = "http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/"
+    params = {
+        "key": STEAM_API_KEY,
+        "steamids": steam_id,
+        "format": "json"
+    }
+
+    async with httpx.AsyncClient() as client:
+        response = await client.get(api_url, params=params)
+        data = response.json()
+        players = data.get("response", {}).get("players", [])
+        
+        if not players:
+            return {"Error": "No player data found"}
+            
+        player = players[0]
+        return {
+            "steamid": player["steamid"],
+            "name": player["personaname"],
+            "avatar": player["avatarfull"]
+        }
 
 @app.get("/common-games")
 async def get_common_games(user_url: str):
-    # ID in link - https://steamcommunity.com/profiles/0000000000000000/
-    if user_url.startswith("https://steamcommunity.com/"):
-        parts = user_url.rstrip("/").split("/")
-        if len(parts) >= 5 and parts[3] in ["id", "profiles"]:
-            user_url = parts[4]
-
-    # Steamd ID 17 digits, vanity URL custom
-    if user_url.isdigit() and len(user_url) == 17:
-        steam_id = user_url
-    else:
-        steam_id = await resolve_vanity_url(user_url)
-
-    api_url = f"http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/"
-
+    steam_id = await get_steam_id(user_url)
+    
     if not steam_id:
         return {"Error": "Could not resolve vanity URL to a Steam ID."}
+
+    api_url = f"http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/"
 
     params = {
         "key": STEAM_API_KEY,

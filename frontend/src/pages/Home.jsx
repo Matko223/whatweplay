@@ -9,31 +9,36 @@ function Home() {
   const [error, setError] = useState('')
   const navigate = useNavigate();
 
-  const addFriend = () => {
+  const addFriend = async () => {
     const trimmed = currentInput.trim();
-    if (trimmed && !steamIds.includes(trimmed)) {
-      setSteamIds([...steamIds, trimmed]);
-      setCurrentInput('');
-      setError('');
+    if (trimmed && !steamIds.some(p => p.steamid === trimmed)) {
+      try {
+        const response = await api.get(`/player-info?identifier=${trimmed}`);
+
+        if (response.data.Error) {
+          setError(response.data.Error);
+        } else {
+          setSteamIds([...steamIds, response.data]);
+          setCurrentInput('');
+          setError('');
+        }
+      } catch (error) {
+        setError('Failed to add friend: ' + error.message);
+      }
     }
   };
 
-  const removeFriend = (idToRemove) => {
-    setSteamIds(steamIds.filter(id => id !== idToRemove));
+  const removeFriend = (steamIdToRemove) => {
+    setSteamIds(steamIds.filter(p => p.steamid !== steamIdToRemove));
   };
 
   const fetchGames = async () => {
-    if (steamIds.length === 0) {
-      setError('Pridaj aspoň jedno Steam ID!');
-      return;
-    }
-    
     setLoading(true)
     setError('')
     
     try {
       const response = await api.get('/common-games', {
-        params: { user_url: steamIds.join(',') }
+        params: { user_url: steamIds.map(p => p.steamid).join(',') }
       })
       
       if (response.data.Error) {
@@ -80,15 +85,16 @@ function Home() {
 
       {/* Name bubbles */}
       <div className="flex flex-wrap gap-2 mb-8 w-full max-w-2xl justify-start">
-          {steamIds.map((id) => (
-          <div key={id} className="flex items-center gap-2 bg-blue-600/20 border border-blue-500/30 px-3 py-1 text-sm font-semibold animate-in fade-in zoom-in duration-300">
-              <span className="text-blue-300">{id}</span>
-              <button 
-              onClick={() => removeFriend(id)}
-              className="hover:text-red-400 text-blue-500 font-black ml-1"
-              >
-              ✕
-              </button>
+          {steamIds.map((player) => (
+          <div key={player.steamid} className="flex items-center gap-2 bg-blue-600/20 border border-blue-500/30 px-3 py-1 text-sm font-semibold animate-in fade-in zoom-in duration-300">
+            <img src={player.avatar} className="w-7 h-7 rounded-full border border-slate-600" alt="avatar" />
+            <span className="text-xs font-bold text-slate-200">{player.name}</span>
+            <button 
+            onClick={() => removeFriend(player.steamid)}
+            className="hover:text-red-400 text-blue-500 font-black ml-1"
+            >
+            ✕
+            </button>
           </div>
           ))}
       </div>
