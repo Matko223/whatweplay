@@ -7,29 +7,49 @@ function Home() {
   const [steamIds, setSteamIds] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [addingFriend, setAddingFriend] = useState(false)
   const navigate = useNavigate();
 
   const addFriend = async () => {
     const trimmed = currentInput.trim();
-    if (trimmed && !steamIds.some(p => p.steamid === trimmed)) {
+    if (trimmed && !steamIds.some(p => p.identifier === trimmed)) {
       try {
+        setAddingFriend(true);
+        
+        const placeholderPlayer = {
+          identifier: trimmed,
+          steamid: null,
+          name: trimmed,
+          avatar: 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect fill=%22%23475569%22 width=%2232%22 height=%2232%22/%3E%3C/svg%3E',
+          isLoading: true
+        };
+        
+        setSteamIds([...steamIds, placeholderPlayer]);
+        setCurrentInput('');
+        setError('');
+
+        // Fetch actual data
         const response = await api.get(`/player-info?identifier=${trimmed}`);
 
         if (response.data.Error) {
           setError(response.data.Error);
+          setSteamIds(prev => prev.filter(p => p.identifier !== trimmed));
         } else {
-          setSteamIds([...steamIds, response.data]);
-          setCurrentInput('');
-          setError('');
+          setSteamIds(prev => 
+            prev.map(p => p.identifier === trimmed ? {...response.data, identifier: trimmed} : p)
+          );
         }
       } catch (error) {
         setError('Failed to add friend: ' + error.message);
+        setSteamIds(prev => prev.filter(p => p.identifier !== trimmed));
+      } finally {
+        setAddingFriend(false);
       }
     }
   };
 
-  const removeFriend = (steamIdToRemove) => {
-    setSteamIds(steamIds.filter(p => p.steamid !== steamIdToRemove));
+  const removeFriend = (identifier) => {
+    setSteamIds(steamIds.filter(p => p.identifier !== identifier));
   };
 
   const fetchGames = async () => {
@@ -77,24 +97,29 @@ function Home() {
           />
           <button 
           onClick={addFriend}
-          className="bg-slate-700 hover:bg-slate-600 px-6 py-3 rounded-xl font-bold text-blue-400 transition"
+          className="bg-slate-700 hover:bg-slate-600 disabled:bg-slate-600 disabled:opacity-50 px-6 py-3 rounded-xl font-bold text-blue-400 transition"
+          disabled={addingFriend}
           >
-          Add
+          {addingFriend ? '...' : 'Add'}
           </button>
       </div>
 
       {/* Name bubbles */}
       <div className="flex flex-wrap gap-2 mb-8 w-full max-w-2xl justify-start">
           {steamIds.map((player) => (
-          <div key={player.steamid} className="flex items-center gap-2 bg-blue-600/20 border border-blue-500/30 px-3 py-1 text-sm font-semibold animate-in fade-in zoom-in duration-300">
+          <div key={player.identifier} className="flex items-center gap-2 bg-blue-600/20 border border-blue-500/30 px-3 py-1 text-sm font-semibold animate-in fade-in zoom-in duration-300">
             <img src={player.avatar} className="w-7 h-7 rounded-full border border-slate-600" alt="avatar" />
-            <span className="text-xs font-bold text-slate-200">{player.name}</span>
-            <button 
-            onClick={() => removeFriend(player.steamid)}
-            className="hover:text-red-400 text-blue-500 font-black ml-1"
-            >
-            ✕
-            </button>
+            <span className="text-xs font-bold text-slate-200">
+                {player.name}
+            </span>
+            {!player.isLoading && (
+              <button 
+              onClick={() => removeFriend(player.identifier)}
+              className="hover:text-red-400 text-blue-500 font-black ml-1"
+              >
+              ✕
+              </button>
+            )}
           </div>
           ))}
       </div>
