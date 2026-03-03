@@ -3,12 +3,19 @@ import os
 from typing import List, Dict
 
 GAME_TAGS_FILE = "operations/data/steam_full_db.json"
+_CACHE = None 
 
 def load_game_tags() -> Dict[str, Dict]:
+    global _CACHE
+    if _CACHE is not None:
+        return _CACHE
+    
     if os.path.exists(GAME_TAGS_FILE):
         with open(GAME_TAGS_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return {}
+            _CACHE = json.load(f)
+            return _CACHE
+    _CACHE = {}
+    return _CACHE
 
 def get_tags_for_game(appid: str) -> Dict:
     data = load_game_tags()

@@ -37,17 +37,34 @@ function Results() {
                 className="rounded-lg mb-4 w-full h-32 object-cover shadow-lg"
               />
 
-              <div className="flex flex-col">
+              <div className="flex flex-col h-full">
                 <h2 className="font-bold text-lg group-hover:text-blue-400 transition-colors truncate">
                   {game.name}
                 </h2>
                 
-                <div className="mt-4 flex items-center justify-between">
-                  <div className="flex flex-col">
-                    <span className="text-[10px] text-slate-500 font-black uppercase tracking-tighter">AppID</span>
-                    <span className="text-sm font-mono text-slate-300">{game.appid}</span>
+                {/* Tags */}
+                {game.tags && game.tags.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-1">
+                    {game.tags.slice(0, 3).map((tag, idx) => (
+                      <span key={idx} className="text-xs bg-blue-600/30 text-blue-300 px-2 py-1 rounded-full font-medium">
+                        {tag}
+                      </span>
+                    ))}
                   </div>
-                  
+                )}
+                
+                {/* Genres */}
+                {game.genres && game.genres.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {game.genres.slice(0, 2).map((genre, idx) => (
+                      <span key={idx} className="text-xs bg-slate-700/50 text-slate-300 px-2 py-1 rounded-full">
+                        {genre}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                
+                <div className="mt-4 flex items-center justify-between">
                   <a 
                     href={`https://store.steampowered.com/app/${game.appid}`}
                     target="_blank"
