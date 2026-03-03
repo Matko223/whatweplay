@@ -24,6 +24,7 @@ def get_tags_for_game(appid: str) -> Dict:
     return {
         "tags": game_data.get("tags", {}),
         "genres": game_data.get("genres", {}),
+        "prices": game_data.get("prices", {}),
         "name": game_data.get("name", "Unknown")
     }
 
@@ -33,3 +34,25 @@ def extract_top_tags(appid: str, limit: int = 5) -> List[str]:
     
     sorted_tags = sorted(tags.items(), key=lambda x: x[1], reverse=True)
     return [tag[0] for tag in sorted_tags[:limit]]
+
+def extract_genres(appid: str) -> List[str]:
+    game_data = load_game_tags().get(str(appid), {})
+    genre_str = game_data.get("genre", "")
+    
+    if genre_str and isinstance(genre_str, str):
+        return [g.strip() for g in genre_str.split(",")]
+    
+    return []
+
+def extract_price(appid: str) -> str:
+    game_data = load_game_tags().get(str(appid), {})
+    price = game_data.get("price", "Unknown")
+    if price == "Unknown":
+        return price
+    elif price == "0":
+        return "Free to Play"
+    elif len(price) <= 2:
+        price = "0." + price + " €"
+    else:
+        price = price[:-2] + "." + price[-2:] + " €"
+    return price

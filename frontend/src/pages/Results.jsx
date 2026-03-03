@@ -28,7 +28,7 @@ function Results() {
             {games.map((game) => (
             <div 
               key={game.appid} 
-              className="group bg-slate-800/40 border border-slate-700/50 p-4 rounded-2xl hover:bg-slate-800 hover:border-blue-500/50 transition-all duration-300"
+              className="group bg-slate-800/40 border border-slate-700/50 p-4 rounded-2xl hover:bg-slate-800 hover:border-blue-500/50 transition-all duration-300 flex flex-col h-full"
             >
               {/* Header Image */}
               <img 
@@ -37,39 +37,54 @@ function Results() {
                 className="rounded-lg mb-4 w-full h-32 object-cover shadow-lg"
               />
 
-              <div className="flex flex-col h-full">
-                <h2 className="font-bold text-lg group-hover:text-blue-400 transition-colors truncate">
-                  {game.name}
-                </h2>
+              <div className="flex flex-col h-full justify-between">
+                <div>
+                  <h2 className="font-bold text-lg group-hover:text-blue-400 transition-colors truncate">
+                    {game.name}
+                  </h2>
+                  
+                  {/* Price */}
+                  {game.price && (
+                    <p className="text-sm text-green-400 font-bold mt-2">
+                      {game.price}
+                    </p>
+                  )}
+                  
+                  {/* Tags Section */}
+                  {game.tags && game.tags.length > 0 && (
+                    <div className="mt-3">
+                      <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-1">Tags</p>
+                      <div className="flex flex-wrap gap-1">
+                        {game.tags.slice(0, 5).map((tag, idx) => (
+                          <span key={idx} className="text-xs bg-blue-600/40 text-blue-200 px-2 py-1 rounded-full font-medium border border-blue-500/20">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Genres Section */}
+                  {game.genres && game.genres.length > 0 && (
+                    <div className="mt-2">
+                      <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-1">Genre</p>
+                      <div className="flex flex-wrap gap-1">
+                        {game.genres.slice(0, 5).map((genre, idx) => (
+                          <span key={idx} className="text-xs bg-purple-600/30 text-purple-300 px-2 py-1 rounded-full border border-purple-500/20">
+                            {genre}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
                 
-                {/* Tags */}
-                {game.tags && game.tags.length > 0 && (
-                  <div className="mt-3 flex flex-wrap gap-1">
-                    {game.tags.slice(0, 3).map((tag, idx) => (
-                      <span key={idx} className="text-xs bg-blue-600/30 text-blue-300 px-2 py-1 rounded-full font-medium">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
-                
-                {/* Genres */}
-                {game.genres && game.genres.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {game.genres.slice(0, 2).map((genre, idx) => (
-                      <span key={idx} className="text-xs bg-slate-700/50 text-slate-300 px-2 py-1 rounded-full">
-                        {genre}
-                      </span>
-                    ))}
-                  </div>
-                )}
-                
-                <div className="mt-4 flex items-center justify-between">
+                <div className="mt-4">
                   <a 
                     href={`https://store.steampowered.com/app/${game.appid}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="px-4 py-2 rounded-xl bg-blue-600/10 text-blue-400 hover:bg-blue-600 hover:text-white font-bold text-xs transition-all"
+                    className="px-4 py-2 rounded-xl bg-blue-600/10 text-blue-400 hover:bg-blue-600 hover:text-white font-bold text-xs transition-all w-full text-center block"
                   >
                     View Store
                   </a>

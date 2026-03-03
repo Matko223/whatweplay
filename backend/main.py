@@ -4,8 +4,7 @@ import dotenv
 import os
 from fastapi.middleware.cors import CORSMiddleware
 from operations.game_intersection import find_common_games
-from operations.get_all_games import build_complete_db
-from operations.get_tags import get_tags_for_game, extract_top_tags, load_game_tags
+from operations.get_game_info import extract_top_tags, extract_genres, extract_price
 
 dotenv.load_dotenv()
 app = FastAPI()
@@ -109,15 +108,8 @@ async def get_common_games(user_url: str):
         for game in common_games:
             appid = game["appid"]
             game["tags"] = extract_top_tags(appid)
-            
-            game_data = load_game_tags().get(str(appid), {})
-            genre_str = game_data.get("genre", "")
-            
-            if genre_str and isinstance(genre_str, str):
-                game["genres"] = [g.strip() for g in genre_str.split(",")]
-            else:
-                game["genres"] = []
-        
+            game["genres"] = extract_genres(appid)
+            game["price"] = extract_price(appid)        
         return common_games
     except Exception as e:
         return {"Error": str(e)}
