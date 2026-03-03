@@ -3,6 +3,7 @@ import httpx
 import dotenv
 import os
 from fastapi.middleware.cors import CORSMiddleware
+from operations.game_intersection import find_common_games
 
 dotenv.load_dotenv()
 app = FastAPI()
@@ -90,26 +91,18 @@ async def get_player_info(identifier: str):
 
 @app.get("/common-games")
 async def get_common_games(user_url: str):
-    steam_id = await get_steam_id(user_url)
-    
-    if not steam_id:
-        return {"Error": "Could not resolve vanity URL to a Steam ID."}
+    identifiers = user_url.split(",")
+    print(f"Received identifiers: {identifiers}")
+    id_array = []
 
-    api_url = f"http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/"
+    for identifier in identifiers:
+        steam_id = await get_steam_id(identifier.strip())
+        if not steam_id:
+            return {"Error": f"Could not resolve vanity URL '{identifier.strip()}' to a Steam ID."}
+        id_array.append(steam_id)
 
-    params = {
-        "key": STEAM_API_KEY,
-        "steamid": steam_id,
-        "format": "json",
-        "include_appinfo": True
-    }
-
-    async with httpx.AsyncClient() as client:
-        response = await client.get(api_url, params=params)
-
-        if response.status_code != 200:
-            return {"Error": f"Failed to fetch data from Steam API with status code: {response.status_code}"}
-        
-        data = response.json()
-
-    return data.get("response", {}).get("games", [])
+    try:
+        common_games = await find_common_games(id_array, STEAM_API_KEY)
+        return common_games
+    except Exception as e:
+        return {"Error": str(e)}
