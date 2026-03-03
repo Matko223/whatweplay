@@ -40,6 +40,8 @@ async def find_common_games(steam_ids: List[str], api_key: str) -> List[Dict]:
         for appid in common_games
     ]
 
+    common_games_info.sort(key=lambda x: x.get("name", "").lower())
+
     return [game for game in common_games_info if game is not None]
 
 
