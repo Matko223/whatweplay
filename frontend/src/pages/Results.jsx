@@ -7,17 +7,32 @@ function Results() {
   const games = location.state?.games || [];
   const availableFilters = location.state?.filters || { tags: {}, genres: {}, price: {} };
   
-  const [filters, setFilters] = useState({ genre: '', tag: '', price: '' });
+  const [filters, setFilters] = useState({ genre: '', tag: '', priceRange: null });
+
+  const extractNumericPrice = (priceStr) => {
+    if (!priceStr || priceStr === 'Free to Play' || priceStr === 'Delisted' || priceStr === 'Unknown') return null;
+    const match = priceStr.match(/\d+[.,]\d+/);
+    if (match) {
+      return parseFloat(match[0].replace(',', '.'));
+    }
+    return null;
+  };
 
   const filteredGames = useMemo(() => {
     return games.filter(game => {
       if (filters.genre && !game.genres?.includes(filters.genre)) return false;
       if (filters.tag && !game.tags?.includes(filters.tag)) return false;
-      if (filters.price) {
-        if (filters.price === 'Free to Play' && game.price !== 'Free to Play') return false;
-        if (filters.price === 'Delisted' && game.price !== 'Delisted') return false;
-        if (filters.price === 'Paid' && (game.price === 'Free to Play' || game.price === 'Delisted' || game.price === 'Unknown')) return false;
+      
+      if (filters.priceRange) {
+        if (filters.priceRange[0] === 0 && game.price === 'Free to Play') {
+          return true;
+        }
+        
+        const gamePrice = extractNumericPrice(game.price);
+        if (gamePrice === null) return false; // Exclude Delisted, Unknown
+        if (gamePrice < filters.priceRange[0] || gamePrice > filters.priceRange[1]) return false;
       }
+      
       return true;
     });
   }, [games, filters]);

@@ -157,7 +157,7 @@ async def fetch_multiple_games_async(appids: List[str]) -> None:
 def extract_game_filters(games: List[Dict]) -> Dict:
     tags_count = {}
     genres_count = {}
-    price_count = {}
+    max_price = 0
 
     for game in games:
         for tag in game.get("tags", []):
@@ -167,10 +167,23 @@ def extract_game_filters(games: List[Dict]) -> Dict:
             genres_count[genre] = genres_count.get(genre, 0) + 1
             
         price = game.get("price", "Unknown")
-        price_count[price] = price_count.get(price, 0) + 1
+        
+        # Extract max price
+        if price not in ["Unknown", "Free to Play", "Delisted"]:
+            try:
+                numeric_price = float(price.replace("€", "").replace(",", ".").strip())
+                if numeric_price > max_price:
+                    max_price = numeric_price
+            except ValueError:
+                continue
+    # Round max price to nearest 5 for better slider steps
+    max_price_rounded = ((int(max_price) // 5) + 1) * 5
 
     return {
         "tags": dict(sorted(tags_count.items(), key=lambda x: x[1], reverse=True)),
         "genres": dict(sorted(genres_count.items(), key=lambda x: x[1], reverse=True)),
-        "price": dict(sorted(price_count.items(), key=lambda x: x[1], reverse=True))
+        "priceRange": {
+            "min": 0,
+            "max": max_price_rounded
+        }
     }
