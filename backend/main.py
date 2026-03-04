@@ -4,7 +4,7 @@ import dotenv
 import os
 from fastapi.middleware.cors import CORSMiddleware
 from operations.game_intersection import find_common_games
-from operations.get_game_info import extract_top_tags, extract_genres, extract_price, extract_price_from_api, fetch_missing_game_info, fetch_multiple_games_async
+from operations.get_game_info import extract_top_tags, extract_genres, extract_price, extract_price_from_api, fetch_missing_game_info, fetch_multiple_games_async, extract_game_filters
 
 dotenv.load_dotenv()
 app = FastAPI()
@@ -128,6 +128,8 @@ async def get_common_games(user_url: str):
             game["tags"] = extract_top_tags(appid)
             game["genres"] = extract_genres(appid)
         
-        return common_games
+        filters = extract_game_filters(common_games)
+        print(f"Extracted filters: {filters}")
+        return {"games": common_games, "filters": filters}
     except Exception as e:
         return {"Error": str(e)}

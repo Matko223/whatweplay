@@ -153,3 +153,24 @@ async def fetch_missing_game_info_async(appid: str) -> Dict:
 async def fetch_multiple_games_async(appids: List[str]) -> None:
     tasks = [fetch_missing_game_info_async(appid) for appid in appids]
     await asyncio.gather(*tasks)
+
+def extract_game_filters(games: List[Dict]) -> Dict:
+    tags_count = {}
+    genres_count = {}
+    price_count = {}
+
+    for game in games:
+        for tag in game.get("tags", []):
+            tags_count[tag] = tags_count.get(tag, 0) + 1
+            
+        for genre in game.get("genres", []):
+            genres_count[genre] = genres_count.get(genre, 0) + 1
+            
+        price = game.get("price", "Unknown")
+        price_count[price] = price_count.get(price, 0) + 1
+
+    return {
+        "tags": dict(sorted(tags_count.items(), key=lambda x: x[1], reverse=True)),
+        "genres": dict(sorted(genres_count.items(), key=lambda x: x[1], reverse=True)),
+        "price": dict(sorted(price_count.items(), key=lambda x: x[1], reverse=True))
+    }

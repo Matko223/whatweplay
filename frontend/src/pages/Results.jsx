@@ -1,5 +1,6 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import Filter from '../components/Filter';
 
 function Results() {
   const location = useLocation();
