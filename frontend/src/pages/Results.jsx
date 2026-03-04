@@ -7,7 +7,14 @@ function Results() {
   const games = location.state?.games || [];
   const availableFilters = location.state?.filters || { tags: {}, genres: {}, price: {} };
   
-  const [filters, setFilters] = useState({ genre: '', tag: '', priceRange: null });
+  const [filters, setFilters] = useState({ 
+    genre: '', 
+    tag: '', 
+    priceRange: null,
+    sortBy: 'name',
+    showDelisted: false,
+    showUnknown: false
+  });
 
   const extractNumericPrice = (priceStr) => {
     if (!priceStr || priceStr === 'Free to Play' || priceStr === 'Delisted' || priceStr === 'Unknown') return null;
@@ -19,7 +26,7 @@ function Results() {
   };
 
   const filteredGames = useMemo(() => {
-    return games.filter(game => {
+    let result = games.filter(game => {
       if (filters.genre && !game.genres?.includes(filters.genre)) return false;
       if (filters.tag && !game.tags?.includes(filters.tag)) return false;
       
@@ -29,12 +36,35 @@ function Results() {
         }
         
         const gamePrice = extractNumericPrice(game.price);
-        if (gamePrice === null) return false; // Exclude Delisted, Unknown
+        if (gamePrice === null) return false;
         if (gamePrice < filters.priceRange[0] || gamePrice > filters.priceRange[1]) return false;
       }
+
+      // Visibility filters
+      if (!filters.showDelisted && game.price === 'Delisted') return false;
+      if (!filters.showUnknown && game.price === 'Unknown') return false;
       
       return true;
     });
+
+    // Sorting
+    result.sort((a, b) => {
+      switch (filters.sortBy) {
+        case 'price-low':
+          const priceA = extractNumericPrice(a.price) || Infinity;
+          const priceB = extractNumericPrice(b.price) || Infinity;
+          return priceA - priceB;
+        case 'price-high':
+          const priceA2 = extractNumericPrice(a.price) || -Infinity;
+          const priceB2 = extractNumericPrice(b.price) || -Infinity;
+          return priceB2 - priceA2;
+        case 'name':
+        default:
+          return a.name.localeCompare(b.name);
+      }
+    });
+
+    return result;
   }, [games, filters]);
 
   return (
@@ -90,7 +120,7 @@ function Results() {
                       <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-1">Tags</p>
                       <div className="flex flex-wrap gap-1">
                         {game.tags.slice(0, 5).map((tag, idx) => (
-                          <span key={idx} className="text-xs bg-blue-600/40 text-blue-200 px-2 py-1 rounded-full font-medium border border-blue-500/20">
+                          <span key={idx} className="text-xs bg-blue-600/40 text-blue-200 px-2 py-1 rounded-lg font-medium border border-blue-500/20">
                             {tag}
                           </span>
                         ))}
@@ -104,7 +134,7 @@ function Results() {
                       <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-1">Genre</p>
                       <div className="flex flex-wrap gap-1">
                         {game.genres.slice(0, 5).map((genre, idx) => (
-                          <span key={idx} className="text-xs bg-purple-600/30 text-purple-300 px-2 py-1 rounded-full border border-purple-500/20">
+                          <span key={idx} className="text-xs bg-purple-600/30 text-purple-300 px-2 py-1 rounded-lg border border-purple-500/20">
                             {genre}
                           </span>
                         ))}

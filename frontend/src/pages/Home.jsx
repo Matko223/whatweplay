@@ -107,7 +107,7 @@ function Home() {
       {/* Name bubbles */}
       <div className="flex flex-wrap gap-2 mb-8 w-full max-w-2xl justify-start">
           {steamIds.map((player) => (
-          <div key={player.identifier} className="flex items-center gap-2 bg-blue-600/20 border border-blue-500/30 px-3 py-1 text-sm font-semibold animate-in fade-in zoom-in duration-300">
+          <div key={player.identifier} className="flex items-center gap-2 bg-blue-600/20 border border-blue-500/30 px-3 py-1 text-sm font-semibold animate-in fade-in zoom-in duration-300 rounded-lg">
             <img src={player.avatar} className="w-7 h-7 rounded-full border border-slate-600" alt="avatar" />
             <span className="text-xs font-bold text-slate-200">
                 {player.name}

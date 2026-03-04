@@ -5,11 +5,9 @@ import 'rc-slider/assets/index.css';
 const FilterGroup = ({ 
   title, 
   items, 
-  counts, 
   selectedValue, 
   onSelect, 
   limit = 6, 
-  colorClass = "blue" 
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const keys = Object.keys(items || {});
@@ -18,12 +16,6 @@ const FilterGroup = ({
 
   const displayedKeys = isExpanded ? keys : keys.slice(0, limit);
 
-  const colorMap = {
-    blue: "bg-blue-600 border-blue-400 shadow-blue-900/40 text-blue-400",
-    purple: "bg-purple-600 border-purple-400 shadow-purple-900/40 text-purple-400",
-    rose: "bg-rose-600 border-rose-400 shadow-rose-900/40 text-rose-400"
-  };
-
   return (
     <div className="mb-8">
       <div className="flex justify-between items-center mb-3">
@@ -31,7 +23,7 @@ const FilterGroup = ({
         {keys.length > limit && (
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className={`text-xs font-semibold transition-colors ${colorMap[colorClass].split(' ')[3]}`}
+            className={"text-xs font-semibold transition-colors text-blue-400 hover:text-blue-300"}
           >
             {isExpanded ? '▼ Show less' : `▶ Show all (${keys.length})`}
           </button>
@@ -45,10 +37,10 @@ const FilterGroup = ({
             <button
               key={key}
               onClick={() => onSelect(key)}
-              className={`px-4 py-2 rounded-full border transition-all duration-300 text-sm font-medium ${
+              className={`px-4 py-2 rounded-lg border transition-all duration-300 text-sm font-medium ${
                 isActive 
-                ? `${colorMap[colorClass].split(' ').slice(0,3).join(' ')} text-white shadow-lg` 
-                : "bg-slate-800 border-slate-700 text-slate-300 hover:border-slate-500"
+                  ? "bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-900/40" 
+                  : "bg-slate-800 border-slate-700 text-slate-300 hover:border-slate-500"
               }`}
             >
               {key} <span className="opacity-60 text-xs ml-1">({items[key]})</span>
@@ -62,6 +54,9 @@ const FilterGroup = ({
 
 function Filter({ filters, setFilters, availableFilters = {} }) {
   const [priceRange, setPriceRange] = useState(null);
+  const [sortBy, setSortBy] = useState('name');
+  const [showDelisted, setShowDelisted] = useState(false);
+  const [showUnknown, setShowUnknown] = useState(false);
 
   const minPrice = availableFilters.priceRange?.min || 0;
   const maxPrice = availableFilters.priceRange?.max || 100;
@@ -88,6 +83,30 @@ function Filter({ filters, setFilters, availableFilters = {} }) {
     }));
   };
 
+  const handleSortChange = (newSort) => {
+    setSortBy(newSort);
+    setFilters(prev => ({
+      ...prev,
+      sortBy: newSort
+    }));
+  };
+
+  const handleVisibilityChange = (type, value) => {
+    if (type === 'delisted') {
+      setShowDelisted(value);
+      setFilters(prev => ({
+        ...prev,
+        showDelisted: value
+      }));
+    } else if (type === 'unknown') {
+      setShowUnknown(value);
+      setFilters(prev => ({
+        ...prev,
+        showUnknown: value
+      }));
+    }
+  };
+
   const hasActiveFilters = filters.genre || filters.tag || filters.priceRange;
 
   return (
@@ -103,7 +122,7 @@ function Filter({ filters, setFilters, availableFilters = {} }) {
               setFilters({ genre: '', tag: '', priceRange: null });
               setPriceRange([minPrice, maxPrice]);
             }}
-            className="px-4 py-2 text-sm font-bold text-rose-400 hover:text-rose-300 transition-all bg-rose-600/10 border border-rose-500/30 rounded-full hover:bg-rose-600/20"
+            className="px-4 py-2 text-sm font-bold text-rose-400 hover:text-rose-300 transition-all bg-rose-600/10 border border-rose-500/30 rounded-lg hover:bg-rose-600/20"
           >
             Reset Filters
           </button>
@@ -117,7 +136,6 @@ function Filter({ filters, setFilters, availableFilters = {} }) {
           items={availableFilters.genres}
           selectedValue={filters.genre}
           onSelect={(val) => toggleSelection('genre', val)}
-          colorClass="blue"
           limit={5}
         />
 
@@ -127,9 +145,57 @@ function Filter({ filters, setFilters, availableFilters = {} }) {
           items={availableFilters.tags}
           selectedValue={filters.tag}
           onSelect={(val) => toggleSelection('tag', val)}
-          colorClass="purple"
           limit={5}
         />
+
+        {/* Sort Section */}
+        <div className="mb-8">
+          <p className="text-sm font-semibold text-slate-400 mb-3 uppercase tracking-wider">Sort By</p>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { value: 'name', label: 'Alphabetical' },
+              { value: 'price-low', label: 'Price: Low to High' },
+              { value: 'price-high', label: 'Price: High to Low' }
+            ].map(option => (
+              <button
+                key={option.value}
+                onClick={() => handleSortChange(option.value)}
+                className={`px-4 py-2 rounded-lg border transition-all duration-300 text-sm font-medium ${
+                  sortBy === option.value 
+                  ? "bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-900/40" 
+                  : "bg-slate-800 border-slate-700 text-slate-300 hover:border-slate-500"
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Visibility Section */}
+        <div className="mb-8">
+          <p className="text-sm font-semibold text-slate-400 mb-3 uppercase tracking-wider">Show/Hide</p>
+          <div className="flex flex-wrap gap-3">
+            <label className="flex items-center gap-2 cursor-pointer px-4 py-2 rounded-lg border border-slate-700 bg-slate-800/50 hover:bg-slate-800 transition-colors">
+              <input
+                type="checkbox"
+                checked={showDelisted}
+                onChange={(e) => handleVisibilityChange('delisted', e.target.checked)}
+                className="w-4 h-4 cursor-pointer"
+              />
+              <span className="text-sm font-medium text-slate-300">Delisted Games</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer px-4 py-2 rounded-lg border border-slate-700 bg-slate-800/50 hover:bg-slate-800 transition-colors">
+              <input
+                type="checkbox"
+                checked={showUnknown}
+                onChange={(e) => handleVisibilityChange('unknown', e.target.checked)}
+                className="w-4 h-4 cursor-pointer"
+              />
+              <span className="text-sm font-medium text-slate-300">Unknown Price</span>
+            </label>
+          </div>
+        </div>
 
         {/* Price Range Slider */}
         {maxPrice > 0 && (
