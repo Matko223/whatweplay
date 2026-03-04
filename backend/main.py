@@ -4,7 +4,7 @@ import dotenv
 import os
 from fastapi.middleware.cors import CORSMiddleware
 from operations.game_intersection import find_common_games
-from operations.get_game_info import extract_top_tags, extract_genres, extract_price, extract_price_from_api, fetch_missing_game_info
+from operations.get_game_info import extract_top_tags, extract_genres, extract_price, extract_price_from_api, fetch_missing_game_info, fetch_multiple_games_async
 
 dotenv.load_dotenv()
 app = FastAPI()
@@ -104,6 +104,9 @@ async def get_common_games(user_url: str):
 
     try:
         common_games = await find_common_games(id_array, STEAM_API_KEY)
+        
+        appids = [str(game["appid"]) for game in common_games]
+        await fetch_multiple_games_async(appids)
 
         for game in common_games:
             appid = game["appid"]

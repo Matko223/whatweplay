@@ -2,6 +2,7 @@ import json
 import os
 from typing import List, Dict
 import httpx
+import asyncio
 
 GAME_TAGS_FILE = "operations/data/steam_full_db.json"
 _CACHE = None
@@ -117,3 +118,38 @@ def fetch_missing_game_info(appid: str) -> Dict:
         print(f"Error fetching {appid}: {e}")
     
     return {}
+
+async def fetch_missing_game_info_async(appid: str) -> Dict:
+    if str(appid) in _API_CACHE:
+        return _API_CACHE[str(appid)]
+    
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(f"https://store.steampowered.com/api/appdetails?appids={appid}&cc=eur", timeout=5.0)
+            if response.status_code == 200:
+                data = response.json()
+                if data and str(appid) in data:
+                    app_data = data[str(appid)]
+                    if app_data.get("success", False):
+                        game_info = app_data.get("data", {})
+                        has_packages = bool(game_info.get("package_groups", []))
+
+                        if "price_overview" not in game_info and not has_packages:
+                            if game_info.get("is_free", False):
+                                result = {str(appid): game_info}
+                            else:
+                                result = {str(appid): {"actual_delisted": True}}
+                        else:
+                            result = {str(appid): game_info}
+                    else:
+                        result = {str(appid): {"actual_delisted": True}}
+                    _API_CACHE[str(appid)] = result
+                    return result
+    except Exception as e:
+        print(f"Error fetching {appid}: {e}")
+    
+    return {}
+
+async def fetch_multiple_games_async(appids: List[str]) -> None:
+    tasks = [fetch_missing_game_info_async(appid) for appid in appids]
+    await asyncio.gather(*tasks)
