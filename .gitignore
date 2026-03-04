@@ -208,3 +208,4 @@ __marimo__/
 
 backend/operations/data/
 backend/operations/get_all_games.py
+backend/operations/get_all_games_100%.py

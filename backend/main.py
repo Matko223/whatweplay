@@ -4,7 +4,7 @@ import dotenv
 import os
 from fastapi.middleware.cors import CORSMiddleware
 from operations.game_intersection import find_common_games
-from operations.get_game_info import extract_top_tags, extract_genres, extract_price
+from operations.get_game_info import extract_top_tags, extract_genres, extract_price, extract_price_from_api, fetch_missing_game_info
 
 dotenv.load_dotenv()
 app = FastAPI()
@@ -107,9 +107,24 @@ async def get_common_games(user_url: str):
 
         for game in common_games:
             appid = game["appid"]
+            
+            api_data = fetch_missing_game_info(appid)
+            
+            if api_data and str(appid) in api_data:
+                game_info = api_data[str(appid)]
+                if game_info.get("actual_delisted"):
+                    game["delisted"] = True
+                    game["price"] = "Delisted"
+                else:
+                    game["delisted"] = False
+                    game["price"] = extract_price_from_api(game_info)
+            else:
+                game["delisted"] = False
+                game["price"] = extract_price(appid)
+            
             game["tags"] = extract_top_tags(appid)
             game["genres"] = extract_genres(appid)
-            game["price"] = extract_price(appid)        
+        
         return common_games
     except Exception as e:
         return {"Error": str(e)}

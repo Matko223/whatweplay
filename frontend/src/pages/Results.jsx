@@ -45,7 +45,7 @@ function Results() {
                   
                   {/* Price */}
                   {game.price && (
-                    <p className="text-sm text-green-400 font-bold mt-2">
+                    <p className={`text-sm font-bold mt-2 ${game.delisted ? 'text-red-500' : 'text-green-400'}`}>
                       {game.price}
                     </p>
                   )}

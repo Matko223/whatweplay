@@ -1,9 +1,11 @@
 import json
 import os
 from typing import List, Dict
+import httpx
 
 GAME_TAGS_FILE = "operations/data/steam_full_db.json"
-_CACHE = None 
+_CACHE = None
+_API_CACHE = {}
 
 def load_game_tags() -> Dict[str, Dict]:
     global _CACHE
@@ -32,8 +34,18 @@ def extract_top_tags(appid: str, limit: int = 5) -> List[str]:
     game_data = load_game_tags().get(str(appid), {})
     tags = game_data.get("tags", {})
     
-    sorted_tags = sorted(tags.items(), key=lambda x: x[1], reverse=True)
-    return [tag[0] for tag in sorted_tags[:limit]]
+    if tags:
+        sorted_tags = sorted(tags.items(), key=lambda x: x[1], reverse=True)
+        return [tag[0] for tag in sorted_tags[:limit]]
+    
+    api_data = fetch_missing_game_info(appid)
+    if api_data and str(appid) in api_data:
+        game_info = api_data[str(appid)]
+        tags_list = game_info.get("tags", [])
+        if isinstance(tags_list, list):
+            return [tag.get("description", "") for tag in tags_list[:limit] if tag]
+    
+    return []
 
 def extract_genres(appid: str) -> List[str]:
     game_data = load_game_tags().get(str(appid), {})
@@ -41,6 +53,13 @@ def extract_genres(appid: str) -> List[str]:
     
     if genre_str and isinstance(genre_str, str):
         return [g.strip() for g in genre_str.split(",")]
+    
+    api_data = fetch_missing_game_info(appid)
+    if api_data and str(appid) in api_data:
+        game_info = api_data[str(appid)]
+        genres_list = game_info.get("genres", [])
+        if isinstance(genres_list, list):
+            return [g.get("description", "") for g in genres_list if g]
     
     return []
 
@@ -56,3 +75,45 @@ def extract_price(appid: str) -> str:
     else:
         price = price[:-2] + "." + price[-2:] + " €"
     return price
+
+def extract_price_from_api(game_info: Dict) -> str:
+    if game_info.get("is_free"):
+        return "Free to Play"
+    
+    price_overview = game_info.get("price_overview", {})
+    if price_overview:
+        formatted = price_overview.get("final_formatted", "")
+        if formatted:
+            return formatted
+    
+    return "Unknown"
+
+def fetch_missing_game_info(appid: str) -> Dict:
+    if str(appid) in _API_CACHE:
+        return _API_CACHE[str(appid)]
+    
+    try:
+        response = httpx.get(f"https://store.steampowered.com/api/appdetails?appids={appid}&cc=eur", timeout=5.0)
+        if response.status_code == 200:
+            data = response.json()
+            if data and str(appid) in data:
+                app_data = data[str(appid)]
+                if app_data.get("success", False):
+                    game_info = app_data.get("data", {})
+                    has_packages = bool(game_info.get("package_groups", []))
+
+                    if "price_overview" not in game_info and not has_packages:
+                        if game_info.get("is_free", False):
+                            result = {str(appid): game_info}
+                        else:
+                            result = {str(appid): {"actual_delisted": True}}
+                    else:
+                        result = {str(appid): game_info}
+                else:
+                    result = {str(appid): {"actual_delisted": True}}
+                _API_CACHE[str(appid)] = result
+                return result
+    except Exception as e:
+        print(f"Error fetching {appid}: {e}")
+    
+    return {}
