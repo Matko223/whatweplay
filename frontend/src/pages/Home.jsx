@@ -64,7 +64,7 @@ function Home() {
       if (response.data.Error) {
         setError(response.data.Error)
       } else {
-        navigate('/results', { state: { games: response.data } })
+        navigate('/results', { state: { games: response.data.games, filters: response.data.filters } })
       }
     } catch (error) {
       setError('Loading error: ' + (error.response?.data?.detail || error.message))

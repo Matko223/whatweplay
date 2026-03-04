@@ -1,10 +1,26 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Filter from '../components/Filter';
 
 function Results() {
   const location = useLocation();
   const games = location.state?.games || [];
+  const availableFilters = location.state?.filters || { tags: {}, genres: {}, price: {} };
+  
+  const [filters, setFilters] = useState({ genre: '', tag: '', price: '' });
+
+  const filteredGames = useMemo(() => {
+    return games.filter(game => {
+      if (filters.genre && !game.genres?.includes(filters.genre)) return false;
+      if (filters.tag && !game.tags?.includes(filters.tag)) return false;
+      if (filters.price) {
+        if (filters.price === 'Free to Play' && game.price !== 'Free to Play') return false;
+        if (filters.price === 'Delisted' && game.price !== 'Delisted') return false;
+        if (filters.price === 'Paid' && (game.price === 'Free to Play' || game.price === 'Delisted' || game.price === 'Unknown')) return false;
+      }
+      return true;
+    });
+  }, [games, filters]);
 
   return (
     <div className="min-h-screen bg-slate-900 text-white p-6 sm:p-10 flex flex-col items-center">
@@ -17,16 +33,18 @@ function Results() {
               Shared <span className="text-blue-500">Library</span>
             </h1>
           </div>
-          <div >
-            <span className="text- text-xl font-bold uppercase tracking-widest">Common Games: </span>
-            <span className="text-2xl font-black text-blue-400">{games.length}</span>
+          <div>
+            <span className="text-xl font-bold uppercase tracking-widest">Common Games: </span>
+            <span className="text-2xl font-black text-blue-400">{filteredGames.length}</span>
           </div>
         </div>
 
+        <Filter filters={filters} setFilters={setFilters} availableFilters={availableFilters} />
+
         {/* Games Grid */}
-        {games.length > 0 ? (
+        {filteredGames.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {games.map((game) => (
+            {filteredGames.map((game) => (
             <div 
               key={game.appid} 
               className="group bg-slate-800/40 border border-slate-700/50 p-4 rounded-2xl hover:bg-slate-800 hover:border-blue-500/50 transition-all duration-300 flex flex-col h-full"
