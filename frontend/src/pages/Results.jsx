@@ -14,6 +14,8 @@ function Results() {
     sortBy: 'name',
     showDelisted: true,
     showUnknown: true,
+    showFree: true,
+    showPaid: true,
     searchTerm: ''
   });
 
@@ -34,6 +36,8 @@ function Results() {
       }
       if (!filters.showDelisted && game.price === 'Delisted') return false;
       if (!filters.showUnknown && game.price === 'Unknown') return false;
+      if (!filters.showFree && game.price === 'Free to Play') return false;
+      if (!filters.showPaid && game.price === 'Not free') return false;
       return true;
     });
 

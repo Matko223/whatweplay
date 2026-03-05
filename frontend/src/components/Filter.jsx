@@ -67,6 +67,7 @@ function Filter({ filters, setFilters, availableFilters = {} }) {
           />
           <span className="text-xs font-bold uppercase tracking-tighter text-slate-400">Show Delisted</span>
         </label>
+
         <label className="flex items-center gap-3 group cursor-pointer p-1 rounded-lg hover:bg-slate-800/50 transition-colors">
           <input 
             type="checkbox" 
@@ -75,6 +76,26 @@ function Filter({ filters, setFilters, availableFilters = {} }) {
             className="w-4 h-4 rounded border-slate-700 bg-slate-900 checked:bg-blue-500"
           />
           <span className="text-xs font-bold uppercase tracking-tighter text-slate-400">Show Unknown Price</span>
+        </label>
+
+        <label className="flex items-center gap-3 group cursor-pointer p-1 rounded-lg hover:bg-slate-800/50 transition-colors">
+          <input 
+            type="checkbox" 
+            checked={filters.showFree} 
+            onChange={(e) => setFilters(f => ({...f, showFree: e.target.checked}))}
+            className="w-4 h-4 rounded border-slate-700 bg-slate-900 checked:bg-blue-500"
+          />
+          <span className="text-xs font-bold uppercase tracking-tighter text-slate-400">Show Free Games</span>
+        </label>
+
+        <label className="flex items-center gap-3 group cursor-pointer p-1 rounded-lg hover:bg-slate-800/50 transition-colors">
+          <input 
+            type="checkbox" 
+            checked={filters.showPaid} 
+            onChange={(e) => setFilters(f => ({...f, showPaid: e.target.checked}))}
+            className="w-4 h-4 rounded border-slate-700 bg-slate-900 checked:bg-blue-500"
+          />
+          <span className="text-xs font-bold uppercase tracking-tighter text-slate-400">Show Paid Games</span>
         </label>
       </SidebarBlock>
 
@@ -145,7 +166,7 @@ function Filter({ filters, setFilters, availableFilters = {} }) {
       {/* Reset Button */}
       {(filters.tag || filters.genre || filters.searchTerm || filters.priceRange) && (
         <button 
-          onClick={() => setFilters({ genre: '', tag: '', priceRange: [minPrice, maxPrice], sortBy: 'name', showDelisted: true, showUnknown: true, searchTerm: '' })}
+          onClick={() => setFilters({ genre: '', tag: '', priceRange: [minPrice, maxPrice], sortBy: 'name', showDelisted: false, showUnknown: false, showFree: true, showPaid: true, searchTerm: '' })}
           className="w-full bg-rose-600/10 hover:bg-rose-600 text-rose-500 hover:text-white font-black uppercase text-[10px] tracking-widest p-3 rounded-2xl transition-all border border-rose-500/20 shadow-lg shadow-rose-900/20"
         >
           Reset All Filters

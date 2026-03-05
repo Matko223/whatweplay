@@ -4,7 +4,11 @@ import dotenv
 import os
 from fastapi.middleware.cors import CORSMiddleware
 from operations.game_intersection import find_common_games
-from operations.get_game_info import extract_top_tags, extract_genres, extract_price, extract_price_from_api, fetch_missing_game_info, fetch_multiple_games_async, extract_game_filters
+from operations.get_game_info import (
+    extract_top_tags, extract_genres, extract_price, 
+    fetch_multiple_games_async, 
+    extract_game_filters, load_game_tags
+)
 
 dotenv.load_dotenv()
 app = FastAPI()
@@ -104,27 +108,19 @@ async def get_common_games(user_url: str):
 
     try:
         common_games = await find_common_games(id_array, STEAM_API_KEY)
+        game_tags_db = load_game_tags()
         
-        appids = [str(game["appid"]) for game in common_games]
-        await fetch_multiple_games_async(appids)
+        appids_to_fetch = [
+            str(game["appid"]) for game in common_games
+            if game_tags_db.get(str(game["appid"]), {}).get("price", "Unknown") == "Unknown"
+        ]
+        
+        if appids_to_fetch:
+            await fetch_multiple_games_async(appids_to_fetch)
 
         for game in common_games:
-            appid = game["appid"]
-            
-            api_data = fetch_missing_game_info(appid)
-            
-            if api_data and str(appid) in api_data:
-                game_info = api_data[str(appid)]
-                if game_info.get("actual_delisted"):
-                    game["delisted"] = True
-                    game["price"] = "Delisted"
-                else:
-                    game["delisted"] = False
-                    game["price"] = extract_price_from_api(game_info)
-            else:
-                game["delisted"] = False
-                game["price"] = extract_price(appid)
-            
+            appid = str(game["appid"])
+            game["price"] = extract_price(appid)
             game["tags"] = extract_top_tags(appid)
             game["genres"] = extract_genres(appid)
         
