@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import Filter from '../components/Filter';
 
 function Results() {
@@ -12,156 +12,146 @@ function Results() {
     tag: '', 
     priceRange: null,
     sortBy: 'name',
-    showDelisted: false,
-    showUnknown: false
+    showDelisted: true,
+    showUnknown: true,
+    searchTerm: ''
   });
 
   const extractNumericPrice = (priceStr) => {
-    if (!priceStr || priceStr === 'Free to Play' || priceStr === 'Delisted' || priceStr === 'Unknown') return null;
+    if (!priceStr || priceStr === 'Free to Play' || priceStr === 'Delisted' || priceStr === 'Unknown') return 0;
     const match = priceStr.match(/\d+[.,]\d+/);
-    if (match) {
-      return parseFloat(match[0].replace(',', '.'));
-    }
-    return null;
+    return match ? parseFloat(match[0].replace(',', '.')) : 0;
   };
 
   const filteredGames = useMemo(() => {
     let result = games.filter(game => {
+      if (filters.searchTerm && !game.name.toLowerCase().includes(filters.searchTerm.toLowerCase())) return false;
       if (filters.genre && !game.genres?.includes(filters.genre)) return false;
       if (filters.tag && !game.tags?.includes(filters.tag)) return false;
-      
       if (filters.priceRange) {
-        if (filters.priceRange[0] === 0 && game.price === 'Free to Play') {
-          return true;
-        }
-        
-        const gamePrice = extractNumericPrice(game.price);
-        if (gamePrice === null) return false;
-        if (gamePrice < filters.priceRange[0] || gamePrice > filters.priceRange[1]) return false;
+        const p = extractNumericPrice(game.price);
+        if (p < filters.priceRange[0] || p > filters.priceRange[1]) return false;
       }
-
-      // Visibility filters
       if (!filters.showDelisted && game.price === 'Delisted') return false;
       if (!filters.showUnknown && game.price === 'Unknown') return false;
-      
       return true;
     });
 
-    // Sorting
-    result.sort((a, b) => {
-      switch (filters.sortBy) {
-        case 'price-low':
-          const priceA = extractNumericPrice(a.price) || Infinity;
-          const priceB = extractNumericPrice(b.price) || Infinity;
-          return priceA - priceB;
-        case 'price-high':
-          const priceA2 = extractNumericPrice(a.price) || -Infinity;
-          const priceB2 = extractNumericPrice(b.price) || -Infinity;
-          return priceB2 - priceA2;
-        case 'name':
-        default:
-          return a.name.localeCompare(b.name);
-      }
+    return result.sort((a, b) => {
+      if (filters.sortBy === 'price-low') return extractNumericPrice(a.price) - extractNumericPrice(b.price);
+      if (filters.sortBy === 'price-high') return extractNumericPrice(b.price) - extractNumericPrice(a.price);
+      return a.name.localeCompare(b.name);
     });
-
-    return result;
   }, [games, filters]);
 
   return (
     <div className="min-h-screen bg-slate-900 text-white p-6 sm:p-10 flex flex-col items-center">
-      <div className="w-full max-w-5xl">
+      <div className="w-full max-w-7xl">
         
-        {/* Header Section */}
+        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 border-b border-slate-800 pb-8">
           <div>
             <h1 className="text-4xl font-black italic uppercase tracking-tighter">
               Shared <span className="text-blue-500">Library</span>
             </h1>
           </div>
-          <div>
-            <span className="text-xl font-bold uppercase tracking-widest">Common Games: </span>
-            <span className="text-2xl font-black text-blue-400">{filteredGames.length}</span>
+          <div className="flex items-center gap-6">
+            <div className="relative">
+               <input 
+                className="bg-slate-800/50 border border-slate-700 text-white px-4 py-2 rounded-xl outline-none focus:border-blue-500 transition-all placeholder-slate-500 w-64"
+                placeholder="Search games..."
+                onChange={(e) => setFilters(f => ({...f, searchTerm: e.target.value}))}
+              />
+            </div>
+            <div>
+              <span className="text-xl font-bold uppercase tracking-widest">Games: </span>
+              <span className="text-2xl font-black text-blue-400">{filteredGames.length}</span>
+            </div>
           </div>
         </div>
 
-        <Filter filters={filters} setFilters={setFilters} availableFilters={availableFilters} />
+        {/* 2 Columns */}
+        <div className="flex flex-col lg:flex-row gap-8 items-start">
+          
+          {/* Sidebar */}
+          <div className="w-full lg:w-[320px] shrink-0">
+            <Filter filters={filters} setFilters={setFilters} availableFilters={availableFilters} />
+          </div>
 
-        {/* Games Grid */}
-        {filteredGames.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredGames.map((game) => (
-            <div 
-              key={game.appid} 
-              className="group bg-slate-800/40 border border-slate-700/50 p-4 rounded-2xl hover:bg-slate-800 hover:border-blue-500/50 transition-all duration-300 flex flex-col h-full"
-            >
-              {/* Header Image */}
-              <img 
-                src={`https://cdn.akamai.steamstatic.com/steam/apps/${game.appid}/header.jpg`} 
-                alt="" 
-                className="rounded-lg mb-4 w-full h-32 object-cover shadow-lg"
-              />
-
-              <div className="flex flex-col h-full justify-between">
-                <div>
-                  <h2 className="font-bold text-lg group-hover:text-blue-400 transition-colors truncate">
-                    {game.name}
-                  </h2>
-                  
-                  {/* Price */}
-                  {game.price && (
-                    <p className={`text-sm font-bold mt-2 ${game.delisted ? 'text-red-500' : 'text-green-400'}`}>
-                      {game.price}
-                    </p>
-                  )}
-                  
-                  {/* Tags Section */}
-                  {game.tags && game.tags.length > 0 && (
-                    <div className="mt-3">
-                      <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-1">Tags</p>
-                      <div className="flex flex-wrap gap-1">
-                        {game.tags.slice(0, 5).map((tag, idx) => (
-                          <span key={idx} className="text-xs bg-blue-600/40 text-blue-200 px-2 py-1 rounded-lg font-medium border border-blue-500/20">
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Genres Section */}
-                  {game.genres && game.genres.length > 0 && (
-                    <div className="mt-2">
-                      <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-1">Genre</p>
-                      <div className="flex flex-wrap gap-1">
-                        {game.genres.slice(0, 5).map((genre, idx) => (
-                          <span key={idx} className="text-xs bg-purple-600/30 text-purple-300 px-2 py-1 rounded-lg border border-purple-500/20">
-                            {genre}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-                
-                <div className="mt-4">
-                  <a 
-                    href={`https://store.steampowered.com/app/${game.appid}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="px-4 py-2 rounded-xl bg-blue-600/10 text-blue-400 hover:bg-blue-600 hover:text-white font-bold text-xs transition-all w-full text-center block"
-                  >
-                    View Store
-                  </a>
-                </div>
-              </div>
+          {/* Zoznam hier (Main Content) */}
+          <div className="flex-grow w-full">
+            <div className="flex items-center justify-between mb-6 bg-slate-800/20 p-3 rounded-xl border border-slate-800">
+               <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Sort By:</span>
+               <select 
+                className="bg-slate-900 border border-slate-700 text-blue-400 px-3 py-1 rounded-lg outline-none text-sm font-bold cursor-pointer hover:border-blue-500"
+                onChange={(e) => setFilters(f => ({...f, sortBy: e.target.value}))}
+                value={filters.sortBy}
+              >
+                <option value="name">Alphabetical</option>
+                <option value="price-low">Price: Low to High</option>
+                <option value="price-high">Price: High to Low</option>
+              </select>
             </div>
-            ))}
+
+            {filteredGames.length > 0 ? (
+              <div className="space-y-4">
+                {filteredGames.map((game) => (
+                  <a 
+                    key={game.appid}
+                    href={`https://store.steampowered.com/app/${game.appid}`}
+                    target="_blank" rel="noreferrer"
+                    className="group flex gap-6 bg-slate-800/40 border border-slate-700/50 p-4 rounded-2xl hover:bg-slate-800 hover:border-blue-500/50 transition-all duration-300 items-center"
+                  >
+                    {/* Game Image */}
+                    <img 
+                      src={`https://cdn.akamai.steamstatic.com/steam/apps/${game.appid}/header.jpg`} 
+                      className="w-48 h-24 rounded-lg object-cover shadow-lg group-hover:scale-105 transition-transform duration-300" 
+                      alt="" 
+                    />
+
+                    {/* Game Info Middle */}
+                    <div className="flex-grow min-w-0">
+                      <h2 className="font-bold text-xl group-hover:text-blue-400 transition-colors truncate">
+                        {game.name}
+                      </h2>
+                      
+                      {/* Genres */}
+                      {game.genres && game.genres.length > 0 && (
+                        <div className="flex gap-2 mt-2 flex-wrap">
+                          {game.genres.slice(0, 4).map((g, i) => (
+                            <span key={i} className="text-[10px] uppercase font-black tracking-tighter bg-slate-900 px-2 py-0.5 rounded border border-slate-700 text-slate-400">{g}</span>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {/* Tags */}
+                      {game.tags && game.tags.length > 0 && (
+                        <div className="flex gap-2 mt-1 flex-wrap">
+                          {game.tags.slice(0, 4).map((t, i) => (
+                            <span key={i} className="text-[10px] uppercase font-bold tracking-tighter bg-slate-800/50 px-2 py-0.5 rounded border border-slate-600 text-slate-500">{t}</span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Price Right */}
+                    <div className="text-right shrink-0">
+                       <p className={`text-lg font-black ${game.price === 'Delisted' ? 'text-rose-500' : 'text-emerald-400'}`}>
+                         {game.price}
+                       </p>
+                       <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Steam Store</span>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-20 bg-slate-800/20 rounded-3xl border-2 border-dashed border-slate-800">
+                <p className="text-slate-500 italic">No games match your current filters.</p>
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="text-center py-20 bg-slate-800/20 rounded-3xl border-2 border-dashed border-slate-800">
-            <p className="text-slate-500 italic">No common games found. Maybe check your squad's privacy settings?</p>
-          </div>
-        )}
+
+        </div>
       </div>
     </div>
   );
