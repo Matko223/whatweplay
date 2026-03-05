@@ -25,6 +25,9 @@ function Results() {
     return match ? parseFloat(match[0].replace(',', '.')) : 0;
   };
 
+  const handleRecommendations = (game) => {
+  };
+
   const filteredGames = useMemo(() => {
     let result = games.filter(game => {
       if (filters.searchTerm && !game.name.toLowerCase().includes(filters.searchTerm.toLowerCase())) return false;
@@ -138,12 +141,20 @@ function Results() {
                       )}
                     </div>
 
-                    {/* Price Right */}
-                    <div className="text-right shrink-0">
-                       <p className={`text-lg font-black ${game.price === 'Delisted' ? 'text-rose-500' : 'text-emerald-400'}`}>
-                         {game.price}
-                       </p>
-                       <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Steam Store</span>
+                    {/* Recommendations Button */}
+                    <div className="text-right shrink-0 flex flex-col gap-2">
+                       <div>
+                         <p className={`text-lg font-black ${game.price === 'Delisted' ? 'text-rose-500' : 'text-emerald-400'}`}>
+                           {game.price}
+                         </p>
+                         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Steam Store</span>
+                       </div>
+
+                       <button
+                         onClick={() => handleRecommendations(game)}
+                         className="flex items-center justify-center gap-1 bg-blue-600/10 hover:bg-blue-600 text-blue-400 hover:text-white text-xs font-black uppercase tracking-tighter px-2 py-1 rounded border border-blue-500/20 hover:border-blue-500 transition-all active:scale-95"                       >
+                         Find Similar
+                       </button>
                     </div>
                   </a>
                 ))}
