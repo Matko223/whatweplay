@@ -44,9 +44,21 @@ function Results() {
       return true;
     });
 
+    const priceOrder = { 'Free to Play': 0, 'Not free': 1, 'Unknown': 2, 'Delisted': 3 };
+
     return result.sort((a, b) => {
-      if (filters.sortBy === 'price-low') return extractNumericPrice(a.price) - extractNumericPrice(b.price);
-      if (filters.sortBy === 'price-high') return extractNumericPrice(b.price) - extractNumericPrice(a.price);
+      if (filters.sortBy === 'price-low') {
+        const priceA = priceOrder[a.price] ?? 99;
+        const priceB = priceOrder[b.price] ?? 99;
+        if (priceA !== priceB) return priceA - priceB;
+        return a.name.localeCompare(b.name);
+      }
+      if (filters.sortBy === 'price-high') {
+        const priceA = priceOrder[a.price] ?? 99;
+        const priceB = priceOrder[b.price] ?? 99;
+        if (priceA !== priceB) return priceB - priceA;
+        return a.name.localeCompare(b.name);
+      }
       return a.name.localeCompare(b.name);
     });
   }, [games, filters]);
@@ -62,17 +74,37 @@ function Results() {
               Shared <span className="text-blue-500">Library</span>
             </h1>
           </div>
+
+          { /* Searchbar */}
           <div className="flex items-center gap-6">
-            <div className="relative">
-               <input 
-                className="bg-slate-800/50 border border-slate-700 text-white px-4 py-2 rounded-xl outline-none focus:border-blue-500 transition-all placeholder-slate-500 w-64"
-                placeholder="Search games..."
+            <div className="relative group">
+              {/* Magnifier */}
+              <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-blue-500 transition-colors pointer-events-none">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+
+              <input 
+                type="text"
+                value={filters.searchTerm}
+                className="bg-slate-800/40 border border-slate-700 text-white pl-10 pr-10 py-2 rounded-xl outline-none focus:border-blue-500 transition-all placeholder-slate-500 w-64 lg:w-80 font-bold text-sm"
+                placeholder="Search by title..."
                 onChange={(e) => setFilters(f => ({...f, searchTerm: e.target.value}))}
               />
-            </div>
-            <div>
-              <span className="text-xl font-bold uppercase tracking-widest">Games: </span>
-              <span className="text-2xl font-black text-blue-400">{filteredGames.length}</span>
+
+              {/* X */}
+              {filters.searchTerm && (
+                <button 
+                  onClick={() => setFilters(f => ({...f, searchTerm: ''}))}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -87,17 +119,35 @@ function Results() {
 
           {/* Zoznam hier (Main Content) */}
           <div className="flex-grow w-full">
-            <div className="flex items-center justify-between mb-6 bg-slate-800/20 p-3 rounded-xl border border-slate-800">
-               <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Sort By:</span>
-               <select 
-                className="bg-slate-900 border border-slate-700 text-blue-400 px-3 py-1 rounded-lg outline-none text-sm font-bold cursor-pointer hover:border-blue-500"
-                onChange={(e) => setFilters(f => ({...f, sortBy: e.target.value}))}
-                value={filters.sortBy}
-              >
-                <option value="name">Alphabetical</option>
-                <option value="price-low">Price: Low to High</option>
-                <option value="price-high">Price: High to Low</option>
-              </select>
+            <div className="flex flex-col sm:flex-row items-center justify-between mb-6 bg-slate-800/10 p-2 rounded-2xl border border-slate-800/50 backdrop-blur-sm gap-4">
+              <div className="flex items-center gap-3 pl-2">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Sort By</span>
+                <div className="flex bg-slate-900/50 p-1 rounded-xl border border-slate-800">
+                  {[
+                    { id: 'name', label: 'A-Z'},
+                    { id: 'price-low', label: '€ ↑' },
+                    { id: 'price-high', label: '€ ↓' }
+                  ].map((option) => (
+                    <button
+                      key={option.id}
+                      onClick={() => setFilters(f => ({ ...f, sortBy: option.id }))}
+                      className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all duration-200 ${
+                        filters.sortBy === option.id 
+                        ? "bg-blue-600 text-white shadow-lg shadow-blue-900/20" 
+                        : "text-slate-500 hover:text-slate-300"
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+                
+              { /* Results Count */}
+              <div className="hidden sm:flex items-center pr-4 border-l border-slate-800 pl-4">
+                <span className="text-sm font-bold text-slate-500 uppercase tracking-widest mr-2">Results:</span>
+                <span className="text-sm font-bold text-blue-400">{filteredGames.length}</span>
+              </div>
             </div>
 
             {filteredGames.length > 0 ? (
