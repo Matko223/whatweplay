@@ -9,6 +9,7 @@ from operations.get_game_info import (
     fetch_multiple_games_async, 
     extract_game_filters, load_game_tags
 )
+from operations.recommended_games import get_recommended_games
 
 dotenv.load_dotenv()
 app = FastAPI()
@@ -129,3 +130,7 @@ async def get_common_games(user_url: str):
         return {"games": common_games, "filters": filters}
     except Exception as e:
         return {"Error": str(e)}
+
+@app.get("/recommended-games")
+async def get_recommended_games_endpoint(game_id: int, limit: int = 5):
+    return get_recommended_games(game_id, limit)
