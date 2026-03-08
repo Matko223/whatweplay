@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import Results from './pages/Results';
+import Recommended from './pages/Recommended';
 import Footer from './components/Footer';
 
 function App() {
@@ -11,7 +12,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/results" element={<Results />} />
-            <Route path="/recommended" element={<Results />} />
+            <Route path="/recommended" element={<Recommended />} />
           </Routes>
         <Footer />
     </Router>

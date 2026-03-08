@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Filter from '../components/Filter';
 
 function Results() {
   const location = useLocation();
+  const navigate = useNavigate();
   const games = location.state?.games || [];
   const availableFilters = location.state?.filters || { tags: {}, genres: {}, price: {} };
   
@@ -25,7 +26,10 @@ function Results() {
     return match ? parseFloat(match[0].replace(',', '.')) : 0;
   };
 
-  const handleRecommendations = (game) => {
+  const handleRecommendations = (e, game) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigate(`/recommended?gameId=${game.appid}&gameName=${encodeURIComponent(game.name)}`);
   };
 
   const filteredGames = useMemo(() => {
@@ -201,7 +205,7 @@ function Results() {
                        </div>
 
                        <button
-                         onClick={() => handleRecommendations(game)}
+                         onClick={(e) => handleRecommendations(e, game)}
                          className="flex items-center justify-center gap-1 bg-blue-600/10 hover:bg-blue-600 text-blue-400 hover:text-white text-xs font-black uppercase tracking-tighter px-2 py-1 rounded border border-blue-500/20 hover:border-blue-500 transition-all active:scale-95"                       >
                          Find Similar
                        </button>

@@ -3,7 +3,7 @@ from typing import List, Dict
 import asyncio
 import httpx
 
-def get_recommended_games(game_id, limit=5):
+def get_recommended_games(game_id, limit=10):
     game_id_str = str(game_id)
     
     target_tags = set(extract_top_tags(game_id_str))
@@ -32,6 +32,7 @@ def get_recommended_games(game_id, limit=5):
                 "appid": appid,
                 "name": game_data.get("name", "Unknown"),
                 "score": total_score,
+                "tags": list(current_tags),
                 "genres": list(current_genres),
                 "price": current_price
         })
@@ -39,3 +40,7 @@ def get_recommended_games(game_id, limit=5):
     recommendations.sort(key=lambda x: x["score"], reverse=True)
     
     return recommendations[:limit]
+
+def more_accurate_recommendations(game_id, limit=10):
+    games = get_recommended_games(game_id, limit)
+    pass
