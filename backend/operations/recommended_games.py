@@ -1,16 +1,20 @@
-from .get_game_info import extract_top_tags, extract_genres, load_game_tags, extract_price, extract_player_count
+from .get_game_info import (extract_top_tags, extract_genres, 
+                            load_game_tags, extract_price, 
+                            extract_player_count, extract_positivity_ratio,
+                            fetch_missing_game_info_async)
 from typing import List, Dict
 import asyncio
 import httpx
 
-def get_recommended_games(game_id, limit=10):
+async def get_recommended_games(game_id, limit=10):
     game_id_str = str(game_id)
     
     target_tags = set(extract_top_tags(game_id_str))
     target_genres = set(extract_genres(game_id_str))
     target_price = extract_price(game_id_str)
     target_ccu = extract_player_count(game_id_str)
-
+    target_positivity = extract_positivity_ratio(game_id_str)
+    
     all_games = load_game_tags()
     recommendations = []
 
@@ -21,17 +25,41 @@ def get_recommended_games(game_id, limit=10):
         current_tags = set(extract_top_tags(appid))
         current_genres = set(extract_genres(appid))
         current_price = extract_price(appid)
-        current_ccu = extract_player_count(appid)
-
-        min_ccu_threshold = target_ccu * 0.5
-
-        tag_score = len(target_tags & current_tags) * 2
-        genre_score = len(target_genres & current_genres) * 3
-        ccu_score = 10 if min_ccu_threshold <= current_ccu else 0
         
-        price_score = 1 if current_price == target_price or target_price == "Free to Play" else 0
+        if current_price == "Delisted":
+            continue
+        
+        current_ccu = extract_player_count(appid)
+        current_positivity = extract_positivity_ratio(appid)
 
-        total_score = tag_score + genre_score + ccu_score + price_score
+        tag_score = (len(target_tags & current_tags) / max(len(target_tags), 1)) * 20
+
+        genre_score = (len(target_genres & current_genres) / max(len(target_genres), 1)) * 25
+
+        price_score = 10 if current_price == target_price or target_price == "Free to Play" else 0
+
+        if target_ccu > 0:
+            if current_ccu == 0:
+                ccu_score = 0
+            elif target_ccu > 50000:
+                ccu_score = 10 if current_ccu > 100 else 0
+            else:
+                ccu_score = (
+                    10 if current_ccu >= target_ccu * 0.5 else
+                    8 if current_ccu >= target_ccu * 0.2 else
+                    5 if current_ccu > 100 else
+                    0
+                )
+        else:
+            ccu_score = 0
+
+        if target_positivity > 0:
+            positivity_diff = abs(current_positivity - target_positivity)
+            positivity_score = max(0, 25 * (1 - positivity_diff))
+        else:
+            positivity_score = 12.5
+
+        total_score = tag_score + genre_score + ccu_score + positivity_score + price_score
 
         recommendations.append({
                 "appid": appid,
@@ -45,4 +73,16 @@ def get_recommended_games(game_id, limit=10):
 
     recommendations.sort(key=lambda x: x["score"], reverse=True)
     
-    return recommendations[:limit]
+    final_recommendations = []
+    for game in recommendations:
+        if len(final_recommendations) >= limit:
+            break
+            
+        steam_data = await fetch_missing_game_info_async(game["appid"])
+        
+        if steam_data.get("actual_delisted"):
+            continue
+            
+        final_recommendations.append(game)
+    
+    return final_recommendations

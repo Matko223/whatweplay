@@ -134,7 +134,7 @@ async def get_common_games(user_url: str):
 @app.get("/recommended-games/{game_id}")
 async def get_recommended_games_endpoint(game_id: int, limit: int = 5):
     try:
-        recommendations = get_recommended_games(game_id, limit=limit)
+        recommendations = await get_recommended_games(game_id, limit=limit)
         return {"recommendations": recommendations}
     except Exception as e:
         return {"Error": str(e)}

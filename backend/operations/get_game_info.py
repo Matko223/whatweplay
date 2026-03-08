@@ -77,6 +77,15 @@ def extract_player_count(appid: str) -> int:
         return game_data["ccu"]
     return 0
 
+def extract_positivity_ratio(appid: str) -> float:
+    game_data = load_game_tags().get(str(appid), {})
+    positive = game_data.get("positive", 0)
+    negative = game_data.get("negative", 0)
+
+    if positive + negative == 0:
+        return 0.0
+
+    return positive / (positive + negative)
 
 async def fetch_missing_game_info_async(appid: str, retries: int = 2) -> Dict:
     if str(appid) in _API_CACHE:

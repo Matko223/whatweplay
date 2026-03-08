@@ -115,7 +115,7 @@ function Recommended() {
                             style={{ width: `${Math.min(game.score * 10, 100)}%` }}
                           ></div>
                         </div>
-                        <span className="text-sm font-bold text-blue-400">{game.score}</span>
+                        <span className="text-sm font-bold text-blue-400">{Math.round(game.score)} / 100</span>
                       </div>
                     </div>
                   </div>
