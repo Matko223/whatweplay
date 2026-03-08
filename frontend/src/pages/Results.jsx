@@ -121,7 +121,7 @@ function Results() {
             <Filter filters={filters} setFilters={setFilters} availableFilters={availableFilters} />
           </div>
 
-          {/* Zoznam hier (Main Content) */}
+          {/* Game List */}
           <div className="flex-grow w-full">
             <div className="flex flex-col sm:flex-row items-center justify-between mb-6 bg-slate-800/10 p-2 rounded-2xl border border-slate-800/50 backdrop-blur-sm gap-4">
               <div className="flex items-center gap-3 pl-2">

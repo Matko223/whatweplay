@@ -71,6 +71,11 @@ def extract_price(appid: str) -> str:
     else:
         return "Not free"
 
+def extract_player_count(appid: str) -> int:
+    game_data = load_game_tags().get(str(appid), {})
+    if game_data and "ccu" in game_data:
+        return game_data["ccu"]
+    return 0
 
 
 async def fetch_missing_game_info_async(appid: str, retries: int = 2) -> Dict:
