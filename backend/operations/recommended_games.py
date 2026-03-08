@@ -3,44 +3,39 @@ from typing import List, Dict
 import asyncio
 import httpx
 
-GAME_TAGS_FILE = "operations/data/steam_full_db.json"
-
 def get_recommended_games(game_id, limit=5):
-    top_tags = extract_top_tags(game_id)
-    genres = extract_genres(game_id)
-    price = extract_price(game_id)
+    game_id_str = str(game_id)
+    
+    target_tags = set(extract_top_tags(game_id_str))
+    target_genres = set(extract_genres(game_id_str))
+    target_price = extract_price(game_id_str)
 
-    recommended_games = {game_id: {"top_tags": top_tags, "genres": genres, "price": price}}
+    all_games = load_game_tags()
+    recommendations = []
 
-    games = load_game_tags()
-
-    for appid in games:
-        if str(appid) == str(game_id):
+    for appid, game_data in all_games.items():
+        if appid == game_id_str:
             continue
 
-        game_tags = extract_top_tags(appid)
-        game_genres = extract_genres(appid)
-        game_price = extract_price(appid)
+        current_tags = set(extract_top_tags(appid))
+        current_genres = set(extract_genres(appid))
+        current_price = extract_price(appid)
 
-        tag_score = sum(1 for tag in top_tags if tag in game_tags)
-        genre_score = sum(1 for genre in genres if genre in game_genres)
-        price_score = 1 if game_price == price or price == "Free to play" else 0
+        tag_score = len(target_tags & current_tags) * 2
+        genre_score = len(target_genres & current_genres) * 3
+        
+        price_score = 1 if current_price == target_price or target_price == "Free to Play" else 0
 
         total_score = tag_score + genre_score + price_score
 
-        recommended_games[appid] = {
-            "name": games[str(appid)].get("name", "Unknown"),
-            "score": total_score,
-            "genres": [g.strip() for g in game_genres.split(",")] if isinstance(game_genres, str) else [],
-            "price": extract_price(appid)
-        }
+        recommendations.append({
+                "appid": appid,
+                "name": game_data.get("name", "Unknown"),
+                "score": total_score,
+                "genres": list(current_genres),
+                "price": current_price
+        })
 
-    sorted_games = sorted(recommended_games.items(), key=lambda x: x[1].get("score", 0), reverse=True)
-    return dict(sorted_games[:limit])
-
-# CS2
-print(get_recommended_games(730, limit=5))
-
-async def get_game_rating(appid: str) -> Dict[str, str]:
-    api_url = f"https://store.steampowered.com/appreviews/{appid}?json=1&language=all"
-    pass
+    recommendations.sort(key=lambda x: x["score"], reverse=True)
+    
+    return recommendations[:limit]
