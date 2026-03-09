@@ -132,9 +132,18 @@ async def get_common_games(user_url: str):
         return {"Error": str(e)}
 
 @app.get("/recommended-games/{game_id}")
-async def get_recommended_games_endpoint(game_id: int, limit: int = 5):
+async def get_recommended_games_endpoint(game_id: str, limit: int = 10):
     try:
         recommendations = await get_recommended_games(game_id, limit=limit)
-        return {"recommendations": recommendations}
+        
+        # Get the name of the input game
+        from operations.get_game_info import load_game_tags
+        all_games = load_game_tags()
+        
+        game_name = game_id
+        if game_id.isnumeric() and game_id in all_games:
+            game_name = all_games[game_id].get("name", game_id)
+        
+        return {"recommendations": recommendations, "game_name": game_name}
     except Exception as e:
         return {"Error": str(e)}

@@ -8,6 +8,12 @@ import httpx
 
 async def get_recommended_games(game_id, limit=10):
     game_id_str = str(game_id)
+
+    if not game_id_str.isnumeric():
+        converted_id = convert_to_appid(game_id_str)
+        if converted_id == -1:
+            raise ValueError(f"Game '{game_id}' not found on Steam")
+        game_id_str = str(converted_id)
     
     target_tags = set(extract_top_tags(game_id_str))
     target_genres = set(extract_genres(game_id_str))
@@ -86,3 +92,15 @@ async def get_recommended_games(game_id, limit=10):
         final_recommendations.append(game)
     
     return final_recommendations
+
+def convert_to_appid(game_name: str) -> int:
+    search_url = f"https://store.steampowered.com/api/storesearch/?term={game_name}&l=english&cc=US"
+    try:
+        response = httpx.get(search_url, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        if "items" in data and len(data["items"]) > 0:
+            return data["items"][0]["id"]
+    except Exception as e:
+        print(f"Error converting '{game_name}' to appid: {e}")
+    return -1

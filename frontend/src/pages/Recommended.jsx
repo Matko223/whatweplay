@@ -5,8 +5,8 @@ function Recommended() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const gameId = searchParams.get('gameId');
-  const gameName = searchParams.get('gameName');
   const [recommendations, setRecommendations] = useState([]);
+  const [gameName, setGameName] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -22,6 +22,7 @@ function Recommended() {
         const response = await fetch(`http://localhost:8000/recommended-games/${gameId}?limit=10`);
         const data = await response.json();
         setRecommendations(data.recommendations || []);
+        setGameName(data.game_name || gameId);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -37,6 +38,7 @@ function Recommended() {
       <div className="w-full max-w-7xl">
         
         {/* Header */}
+        {!error && (
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 border-b border-slate-800 pb-8">
           <div>
             <button
@@ -49,20 +51,21 @@ function Recommended() {
               Back
             </button>
             <h1 className="text-4xl font-black italic uppercase tracking-tighter">
-              Similar to <span className="text-blue-500">{gameName}</span>
+              Similar to <span className="text-blue-500">{gameName || gameId}</span>
             </h1>
           </div>
         </div>
+        )}
 
         {/* Main Content */}
         <div className="flex-grow w-full">
-          {loading ? (
-            <div className="text-center py-20 bg-slate-800/20 rounded-3xl border-2 border-dashed border-slate-800">
-              <p className="text-slate-500 italic">Loading recommendations...</p>
-            </div>
-          ) : error ? (
+          {error ? (
             <div className="text-center py-20 bg-slate-800/20 rounded-3xl border-2 border-dashed border-slate-800">
               <p className="text-rose-500 italic">{error}</p>
+            </div>
+          ) : loading && recommendations.length === 0 ? (
+            <div className="text-center py-20 bg-slate-800/20 rounded-3xl border-2 border-dashed border-slate-800">
+              <p className="text-slate-500 italic">Loading recommendations...</p>
             </div>
           ) : recommendations.length > 0 ? (
             <div className="space-y-4">
