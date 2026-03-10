@@ -51,3 +51,11 @@ whatweplay/
 - **React** - UI framework
 - **Vite** - Build tool and dev server
 - **Tailwind CSS** - Styling
+
+## Screenshots
+
+### Home Page
+![Home page](./frontend/public/images/home.png)
+
+### Shared Library
+![Results](./frontend/public/images/results.png)
